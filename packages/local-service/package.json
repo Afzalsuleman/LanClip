@@ -1,0 +1,27 @@
+{
+  "name": "@lanclip/local-service",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LANClip Local Background Service",
+  "main": "./dist/main.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@lanclip/shared": "workspace:*",
+    "bonjour-service": "^1.2.1",
+    "clipboardy": "^4.0.0",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "@types/ws": "^8.5.10",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}

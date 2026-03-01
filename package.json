@@ -1,0 +1,35 @@
+{
+  "name": "lanclip",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LANClip - Cross-device clipboard synchronization",
+  "author": "LANClip Team",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:extension": "pnpm --filter @lanclip/extension dev",
+    "dev:service": "pnpm --filter @lanclip/local-service dev",
+    "build:extension": "pnpm --filter @lanclip/extension build",
+    "build:service": "pnpm --filter @lanclip/local-service build",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "type-check": "pnpm -r type-check"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "prettier": "^3.2.4",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}
