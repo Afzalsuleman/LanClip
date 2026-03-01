@@ -5,7 +5,8 @@ import { WebSocketServer } from './network/websocket-server.js';
 import { logger } from './utils/logger.js';
 import os from 'os';
 
-const PORT = 8765;
+const PORT = parseInt(process.env.PORT || '8765');
+const PEER_IP = process.env.PEER_IP; // Manual peer connection
 const SERVICE_NAME = '_lanclip._tcp.local';
 
 async function main() {
@@ -69,6 +70,22 @@ async function main() {
       logger.info(`❌ Device lost: ${device.name}`);
       wsServer.disconnectPeer(device.id);
     });
+
+    // 6. Manual peer connection (if PEER_IP is set)
+    if (PEER_IP) {
+      logger.info(`🔧 Manual peer mode enabled`);
+      setTimeout(() => {
+        logger.info(`⚙️  Connecting to manual peer at ${PEER_IP}:${PORT}`);
+        const manualDevice = {
+          id: `manual-${PEER_IP}`,
+          name: `Manual-Peer-${PEER_IP}`,
+          ip: PEER_IP,
+          port: PORT,
+          status: 'online' as const,
+        };
+        wsServer.connectToPeer(manualDevice);
+      }, 2000);
+    }
 
     logger.info('✨ LANClip service running successfully!');
     logger.info('💡 Copy text on this device to sync with peers on the same network');
