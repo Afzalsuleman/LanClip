@@ -47,12 +47,26 @@ export interface PongMessage {
   timestamp: number;
 }
 
+// Extension <-> Local Service control messages
+export interface GetStatusMessage {
+  type: 'get_status';
+}
+
+export interface StatusMessage {
+  type: 'status';
+  payload: {
+    peers: string[];
+  };
+}
+
 export type WebSocketMessage =
   | ClipboardMessage
   | DeviceAnnounceMessage
   | DeviceListMessage
   | PingMessage
-  | PongMessage;
+  | PongMessage
+  | GetStatusMessage
+  | StatusMessage;
 
 // Native messaging types (Extension <-> Local Service)
 export interface NativeMessage {
