@@ -5,6 +5,8 @@ node_modules/
 # Build outputs
 dist/
 build/
+# Keep extension dist for direct Chrome loading
+!packages/extension/dist/
 *.tsbuildinfo
 
 # Environment variables

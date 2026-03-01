@@ -1,0 +1,26 @@
+{
+  "name": "@lanclip/extension",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LANClip Chrome Extension",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lanclip/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "@vitejs/plugin-react": "^4.3.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.4.11"
+  }
+}
