@@ -38,9 +38,8 @@ export class WebSocketServer extends EventEmitter {
             if (message.type === 'get_status') {
               this.sendStatusToClient(ws);
             } else {
-              // Extension sending clipboard → broadcast to peers
+              // Extension sending clipboard → emit for main.ts to encrypt + broadcast
               this.emit('message', message);
-              this.broadcast(message);
             }
           } catch (error) {
             logger.error('Invalid message from extension:', error);
@@ -57,7 +56,6 @@ export class WebSocketServer extends EventEmitter {
         // ── Remote Peer (LANClip on another device) ──────────────────
         logger.info(`New peer connected from ${clientIp}`);
 
-        // Store the inbound peer connection by IP
         const peerId = `inbound-${clientIp}`;
         this.peers.set(peerId, ws);
         this.notifyExtensionPeerChange();
@@ -65,9 +63,7 @@ export class WebSocketServer extends EventEmitter {
         ws.on('message', (data: Buffer) => {
           try {
             const message: WebSocketMessage = JSON.parse(data.toString());
-            // Forward to extension
-            this.broadcastToLocalClients(message);
-            // Emit for main.ts to handle (e.g. write to local clipboard)
+            // Emit to main.ts for decryption — main.ts will send decrypted to extension
             this.emit('message', message);
           } catch (error) {
             logger.error('Invalid message received:', error);
@@ -88,6 +84,18 @@ export class WebSocketServer extends EventEmitter {
     });
 
     logger.info(`WebSocket server listening on port ${this.port}`);
+  }
+
+  /** Send decrypted clipboard text to all extension clients */
+  notifyExtensionClipboard(decryptedText: string, sourceDeviceId: string) {
+    const msg = JSON.stringify({
+      type: 'clipboard.received',
+      text: decryptedText,
+      from: sourceDeviceId,
+    });
+    for (const client of this.localClients) {
+      if (client.readyState === WebSocket.OPEN) client.send(msg);
+    }
   }
 
   // Send status message to a specific local client
@@ -112,23 +120,14 @@ export class WebSocketServer extends EventEmitter {
     }
   }
 
-  // Forward a message to all local extension clients
-  private broadcastToLocalClients(message: WebSocketMessage) {
-    const data = JSON.stringify(message);
-    for (const client of this.localClients) {
-      if (client.readyState === WebSocket.OPEN) client.send(data);
-    }
-  }
-
   broadcast(message: WebSocketMessage) {
+    // Send only to remote peers (not to local extension — extension gets decrypted version separately)
     const data = JSON.stringify(message);
     this.peers.forEach((peer) => {
       if (peer.readyState === WebSocket.OPEN) {
         peer.send(data);
       }
     });
-    // Also forward to local extension clients so they see what was sent
-    this.broadcastToLocalClients(message);
   }
 
   broadcastToPeer(peerId: string, message: WebSocketMessage) {
@@ -156,8 +155,7 @@ export class WebSocketServer extends EventEmitter {
       ws.on('message', (data: Buffer) => {
         try {
           const message: WebSocketMessage = JSON.parse(data.toString());
-          // Forward clipboard to extension
-          this.broadcastToLocalClients(message);
+          // Emit to main.ts — main.ts decrypts and calls notifyExtensionClipboard
           this.emit('message', message);
         } catch (error) {
           logger.error('Invalid message from peer:', error);
