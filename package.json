@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "dev:extension": "pnpm --filter @lanclip/extension dev",
-    "dev:service": "pnpm --filter lanclip dev",
+    "dev:service": "cd packages/local-service && node_modules/.bin/tsx src/main.ts",
     "build:extension": "pnpm --filter @lanclip/extension build",
     "build:service": "pnpm --filter lanclip build",
     "build": "pnpm -r build",
