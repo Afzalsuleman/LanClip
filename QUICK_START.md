@@ -2,17 +2,17 @@
 
 ## 📋 What You Need
 - Both devices on the **same WiFi network**
-- **Node.js 18+** installed on both devices → [Download](https://nodejs.org)
+- **Node.js 18+** on both devices → [Download](https://nodejs.org)
 - **Chrome browser** on both devices
 - **Git** installed on both devices
 
 ---
 
-## 🖥️ Device A Setup (First Device)
+## 🚀 Setup (Same Steps on Both Devices)
 
 ### Step 1: Clone the Project
 ```bash
-git clone https://github.com/Afzalsuleman/LanClip.git
+git clone https://github.com/Afzalsulemen/LanClip.git
 cd LanClip
 ```
 
@@ -21,138 +21,93 @@ cd LanClip
 npm install -g pnpm
 ```
 
-### Step 3: Install Dependencies
+### Step 3: Install Dependencies & Build
 ```bash
 pnpm install
-```
-
-### Step 4: Set Encryption Key (IMPORTANT!)
-> Use the same key on BOTH devices. Min 6 characters.
-```bash
-node packages/local-service/dist/bin/lanclip.js set-key YOUR-SECRET-KEY
-```
-Example:
-```bash
-node packages/local-service/dist/bin/lanclip.js set-key my-secret-123
-```
-
-### Step 5: Build the Project
-```bash
 pnpm build
 ```
 
-### Step 6: Start the Service
+### Step 4: Start the Service
 ```bash
 pnpm dev:service
 ```
-You should see:
+
+**On the first run, it will ask you to enter a room code:**
+
 ```
+🎉 Welcome to LANClip!
+──────────────────────────────────────────
+🔐 No encryption key found.
+   Both devices must use the SAME key to sync.
+
+   Enter a room code (min 6 chars): █
+```
+
+> ⚠️ **Enter the SAME room code on BOTH devices!**
+> For example: `my-team-2024`
+
+After entering the key, the service starts automatically:
+```
+   ✅ Key saved: "my-team-2024"
+   Use the same key on all devices!
+──────────────────────────────────────────
+
+🚀 Starting LANClip service...
 ✅ WebSocket server started on port 8765
 🔐 Encryption: ENABLED
-✅ mDNS discovery started
 ✅ Subnet scanner started (auto-discovery)
 ✅ Clipboard monitoring started
 ✨ LANClip service running successfully!
 ```
 
-### Step 7: Install Chrome Extension
-1. Open Chrome → go to `chrome://extensions`
-2. Enable **Developer mode** (top right toggle)
+### Step 5: Install Chrome Extension
+1. Open Chrome → `chrome://extensions`
+2. Enable **Developer mode** (top-right toggle)
 3. Click **"Load unpacked"**
-4. Navigate to: `LanClip/packages/extension/dist`
-5. Click **"Select Folder"**
-6. Click the 📋 LANClip icon in Chrome toolbar
-7. The **setup wizard** will appear — click through the steps
-
----
-
-## 💻 Device B Setup (Second Device)
-
-### Step 1: Clone the Project
-```bash
-git clone https://github.com/Afzalsuleman/LanClip.git
-cd LanClip
-```
-
-### Step 2: Install pnpm (if not installed)
-```bash
-npm install -g pnpm
-```
-
-### Step 3: Install Dependencies
-```bash
-pnpm install
-```
-
-### Step 4: Set the SAME Encryption Key as Device A
-```bash
-node packages/local-service/dist/bin/lanclip.js set-key YOUR-SECRET-KEY
-```
-> ⚠️ Must be EXACTLY the same key as Device A
-
-### Step 5: Build the Project
-```bash
-pnpm build
-```
-
-### Step 6: Start the Service
-```bash
-pnpm dev:service
-```
-
-### Step 7: Install Chrome Extension (same as Device A steps 7.1–7.7)
+4. Select: `LanClip/packages/extension/dist`
+5. Click 📋 LANClip icon in toolbar → setup wizard appears → click through it
 
 ---
 
 ## ✅ Test Clipboard Sync
 
+After both devices are set up:
 1. **Copy text on Device A** (Cmd+C / Ctrl+C)
 2. **Paste on Device B** (Cmd+V / Ctrl+V)
-3. It should paste Device A's clipboard content! 🎉
+3. You get Device A's text! 🎉
 
-**Bidirectional:** Also works from Device B → Device A
+Works in **both directions** automatically.
 
 ---
 
-## 📊 What You'll See in the Service Logs
+## 📊 Expected Logs When Working
 
-When devices find each other:
+Devices find each other (within ~30 seconds):
 ```
-🔍 Scanning 253 IPs on subnet for LANClip peers...
+🔍 Scanning 253 IPs on subnet...
 ✅ Found 1 peer(s) on subnet: 192.168.1.11
 📍 Device found: 192.168.1.11 at 192.168.1.11:8765
 ✅ Connected to peer: 192.168.1.11
 ```
 
-When clipboard syncs:
+Clipboard sync:
 ```
 📋 Clipboard changed (10 chars), broadcasting to peers...
-📥 Received clipboard update from peer: lanclip-Device-B
+📥 Received & decrypted clipboard from peer: lanclip-Device-B
 ```
-
----
-
-## 🔐 Encryption Status
-
-In the Chrome extension popup header:
-- `🔐 Encrypted` — encryption is working ✅
-- `⚠️ No key` — no encryption key set (clipboard sent as plain text)
 
 ---
 
 ## 🔧 Useful Commands
 
 ```bash
-# Check service status
+# Change room code
+node packages/local-service/dist/bin/lanclip.js set-key new-key
+
+# Check status
 node packages/local-service/dist/bin/lanclip.js status
 
-# Change encryption key
-node packages/local-service/dist/bin/lanclip.js set-key new-key-here
-
-# Disable encryption
-node packages/local-service/dist/bin/lanclip.js clear-key
-
-# View current config
+# View config
 node packages/local-service/dist/bin/lanclip.js config
 ```
 
@@ -160,31 +115,9 @@ node packages/local-service/dist/bin/lanclip.js config
 
 ## 🆘 Troubleshooting
 
-### "No peers found"
-- Make sure both devices are on the **same WiFi network**
-- Check that the service is running on **both** devices
-- Wait up to 30 seconds (scanner runs every 30s)
-
-### Extension shows "Disconnected"
-- Make sure `pnpm dev:service` is running
-- Reload the extension: `chrome://extensions` → click the 🔄 reload button
-
-### Wrong key / clipboard not syncing
-- Verify both devices use the **exact same key**
-- Run `lanclip.js config` on both to check the key
-
-### Port 8765 already in use
-```bash
-lsof -ti:8765 | xargs kill -9
-```
-
----
-
-## 📱 Chrome Extension Popup
-
-| Screen | Shown When |
-|--------|-----------|
-| **Setup Wizard** | First launch (guides you through setup) |
-| **Normal UI** | Service is running and connected |
-
-Click **"📖 View setup guide →"** anytime to re-open the wizard.
+| Problem | Solution |
+|---------|----------|
+| "No peers found" | Ensure both devices on same WiFi |
+| Extension "Disconnected" | Run `pnpm dev:service`, reload extension |
+| Clipboard not syncing | Verify SAME key on both devices |
+| Port 8765 in use | Run: `lsof -ti:8765 \| xargs kill -9` |

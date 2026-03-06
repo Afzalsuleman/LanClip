@@ -1,10 +1,22 @@
 #!/usr/bin/env node
 // LANClip CLI - npm global package entry point
 
+import { createInterface } from 'readline';
 import { loadConfig, setEncryptionKey, clearEncryptionKey, getConfigPath } from '../src/config.js';
 
 const command = process.argv[2];
 const arg = process.argv[3];
+
+/** Prompt user for input in terminal */
+function prompt(question: string): Promise<string> {
+  return new Promise((resolve) => {
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    rl.question(question, (answer) => {
+      rl.close();
+      resolve(answer.trim());
+    });
+  });
+}
 
 const HELP = `
 LANClip - LAN Clipboard Sync
@@ -27,6 +39,41 @@ Examples:
 async function main() {
   switch (command) {
     case 'start': {
+      const config = loadConfig();
+
+      // First-time setup: interactively ask for encryption key if not set
+      if (!config.encryptionKey) {
+        console.log('');
+        console.log('🎉 Welcome to LANClip!');
+        console.log('──────────────────────────────────────────');
+        console.log('🔐 No encryption key found.');
+        console.log('   Both devices must use the SAME key to sync.');
+        console.log('');
+
+        let key = '';
+        while (key.length < 6) {
+          key = await prompt('   Enter a room code (min 6 chars): ');
+          if (key.length === 0) {
+            const skip = await prompt('   ⚠️  Skip encryption? Data will be unencrypted. (y/N): ');
+            if (skip.toLowerCase() === 'y') {
+              console.log('   ⚠️  Skipping encryption.');
+              break;
+            }
+          } else if (key.length < 6) {
+            console.log('   ❌ Key too short! Must be at least 6 characters. Try again.');
+          }
+        }
+
+        if (key.length >= 6) {
+          setEncryptionKey(key);
+          console.log(`   ✅ Key saved: "${key}"`);
+          console.log('   Use the same key on all devices!');
+        }
+
+        console.log('──────────────────────────────────────────');
+        console.log('');
+      }
+
       console.log('🚀 Starting LANClip service...');
       // Dynamically import and run the main service (runs on import as side-effect)
       await import('../src/main.js');
