@@ -1,17 +1,63 @@
 // LANClip Local Service - Main Entry Point
+import { createInterface } from 'readline';
 import { ClipboardMonitor } from './clipboard/monitor.js';
 import { MDNSDiscovery } from './network/mdns-discovery.js';
 import { SubnetScanner } from './network/subnet-scanner.js';
 import { WebSocketServer } from './network/websocket-server.js';
 import { encrypt, decrypt } from './crypto/encryption.js';
-import { loadConfig } from './config.js';
+import { loadConfig, setEncryptionKey } from './config.js';
 import { logger } from './utils/logger.js';
 import os from 'os';
 
+/** Prompt user for input in terminal */
+function prompt(question: string): Promise<string> {
+  return new Promise((resolve) => {
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    rl.question(question, (answer) => {
+      rl.close();
+      resolve(answer.trim());
+    });
+  });
+}
+
 async function main() {
-  const config = loadConfig();
+  let config = loadConfig();
   const PORT = config.port;
   const PEER_IP = process.env.PEER_IP;
+
+  // ── First-time setup: ask for encryption key if none set ──
+  if (!config.encryptionKey) {
+    console.log('');
+    console.log('🎉 Welcome to LANClip!');
+    console.log('──────────────────────────────────────────');
+    console.log('🔐 No encryption key found.');
+    console.log('   Both devices must use the SAME key to sync.');
+    console.log('');
+
+    let key = '';
+    while (true) {
+      key = await prompt('   Enter a room code (min 6 chars, or press Enter to skip): ');
+      if (key.length === 0) {
+        const skip = await prompt('   ⚠️  Skip encryption? Data will be unencrypted. (y/N): ');
+        if (skip.toLowerCase() === 'y') {
+          console.log('   ⚠️  Starting without encryption.');
+          break;
+        }
+      } else if (key.length < 6) {
+        console.log('   ❌ Too short! Must be at least 6 characters. Try again.');
+      } else {
+        setEncryptionKey(key);
+        console.log(`   ✅ Key saved: "${key}"`);
+        console.log('   Use the SAME key on all devices!');
+        config = loadConfig(); // reload config with new key
+        break;
+      }
+    }
+
+    console.log('──────────────────────────────────────────');
+    console.log('');
+  }
+
   const encryptionKey = config.encryptionKey;
 
   logger.info('🚀 Starting LANClip Local Service...');
@@ -20,7 +66,7 @@ async function main() {
   if (encryptionKey) {
     logger.info('🔐 Encryption: ENABLED');
   } else {
-    logger.warn('⚠️  Encryption: DISABLED (run: lanclip set-key <key> to enable)');
+    logger.warn('⚠️  Encryption: DISABLED (run: pnpm dev:service to set a key)');
   }
 
   try {
