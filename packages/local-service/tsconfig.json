@@ -2,12 +2,12 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": ".",
     "module": "ESNext",
     "moduleResolution": "node",
     "lib": ["ES2022"]
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "bin/**/*"],
   "references": [
     { "path": "../shared" }
   ]

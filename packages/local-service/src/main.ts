@@ -3,16 +3,25 @@ import { ClipboardMonitor } from './clipboard/monitor.js';
 import { MDNSDiscovery } from './network/mdns-discovery.js';
 import { SubnetScanner } from './network/subnet-scanner.js';
 import { WebSocketServer } from './network/websocket-server.js';
+import { encrypt, decrypt } from './crypto/encryption.js';
+import { loadConfig } from './config.js';
 import { logger } from './utils/logger.js';
 import os from 'os';
 
-const PORT = parseInt(process.env.PORT || '8765');
-const PEER_IP = process.env.PEER_IP; // Optional: manual override
-const SERVICE_NAME = '_lanclip._tcp.local';
-
 async function main() {
+  const config = loadConfig();
+  const PORT = config.port;
+  const PEER_IP = process.env.PEER_IP;
+  const encryptionKey = config.encryptionKey;
+
   logger.info('🚀 Starting LANClip Local Service...');
   logger.info(`Device: ${os.hostname()}`);
+
+  if (encryptionKey) {
+    logger.info('🔐 Encryption: ENABLED');
+  } else {
+    logger.warn('⚠️  Encryption: DISABLED (run: lanclip set-key <key> to enable)');
+  }
 
   try {
     // 1. Start WebSocket server for P2P communication
@@ -21,6 +30,7 @@ async function main() {
     logger.info(`✅ WebSocket server started on port ${PORT}`);
 
     // 2. Create a shared device-found handler
+    const SERVICE_NAME = '_lanclip._tcp.local';
     const deviceId = `lanclip-${os.hostname()}-${Date.now()}`;
 
     const onDeviceFound = (device: { id: string; name: string; ip: string; port: number; status: 'online' | 'offline'; lastSeen?: number }) => {
@@ -47,7 +57,6 @@ async function main() {
       scanner.on('deviceLost', onDeviceLost);
       scanner.start();
       logger.info('✅ Subnet scanner started (auto-discovery)');
-
       process.on('SIGINT', () => scanner.stop());
     }
 
@@ -70,15 +79,21 @@ async function main() {
 
     clipboard.on('change', async (text: string) => {
       logger.info(`📋 Clipboard changed (${text.length} chars), broadcasting to peers...`);
+
+      // Encrypt if key is set
+      const payload = encryptionKey ? encrypt(text, encryptionKey) : text;
+      const isEncrypted = !!encryptionKey;
+
       wsServer.broadcast({
         type: 'clipboard.update',
         payload: {
           id: `clip-${Date.now()}`,
-          data: text,
+          data: payload,
           contentType: 'text',
           timestamp: Date.now(),
           sourceDeviceId: deviceId,
-        },
+          encrypted: isEncrypted,
+        } as any,
       });
     });
 
@@ -88,12 +103,30 @@ async function main() {
     // 7. Handle incoming clipboard updates from peers
     wsServer.on('message', async (data) => {
       if (data.type === 'clipboard.update') {
-        logger.info(`📥 Received clipboard update from peer: ${data.payload.sourceDeviceId}`);
-        await clipboard.setClipboard(data.payload.data);
+        const payload = data.payload as any;
+        let text: string = payload.data;
+
+        // Decrypt if the message is encrypted
+        if (payload.encrypted && encryptionKey) {
+          const decrypted = decrypt(text, encryptionKey);
+          if (decrypted === null) {
+            logger.warn('⚠️  Received encrypted message but decryption failed (wrong key?)');
+            return;
+          }
+          text = decrypted;
+          logger.info(`📥 Received & decrypted clipboard from peer: ${payload.sourceDeviceId}`);
+        } else if (payload.encrypted && !encryptionKey) {
+          logger.warn('⚠️  Received encrypted message but no key is set — ignored');
+          return;
+        } else {
+          logger.info(`📥 Received clipboard update from peer: ${payload.sourceDeviceId}`);
+        }
+
+        await clipboard.setClipboard(text);
       }
 
       if (data.type === 'ping') {
-        wsServer.broadcastToPeer(data.sourceDeviceId, {
+        wsServer.broadcastToPeer((data as any).sourceDeviceId, {
           type: 'pong',
           timestamp: Date.now(),
         });

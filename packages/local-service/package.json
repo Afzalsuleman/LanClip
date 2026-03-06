@@ -1,10 +1,20 @@
 {
-  "name": "@lanclip/local-service",
+  "name": "lanclip",
   "version": "0.1.0",
-  "private": true,
-  "description": "LANClip Local Background Service",
+  "description": "LAN clipboard sync - copy on one device, paste on another",
   "main": "./dist/main.js",
   "type": "module",
+  "bin": {
+    "lanclip": "./dist/bin/lanclip.js"
+  },
+  "files": [
+    "dist/"
+  ],
+  "keywords": ["clipboard", "sync", "lan", "network", "productivity", "copy-paste"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/main.ts",
