@@ -10,9 +10,9 @@
   ],
   "scripts": {
     "dev:extension": "pnpm --filter @lanclip/extension dev",
-    "dev:service": "pnpm --filter @lanclip/local-service dev",
+    "dev:service": "pnpm --filter lanclip dev",
     "build:extension": "pnpm --filter @lanclip/extension build",
-    "build:service": "pnpm --filter @lanclip/local-service build",
+    "build:service": "pnpm --filter lanclip build",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
